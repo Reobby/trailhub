@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrailGrid & LineCheck — MTB Engineering, Bikepark Guide & Trailbuilding Suite</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            carbon: {
+              950: '#090b0e',
+              900: '#0f1318',
+              850: '#141921',
+              800: '#1a212b',
+              700: '#252f3d',
+            },
+            mint: {
+              400: '#2dfad0',
+              500: '#00f5b8',
+              600: '#00c493',
+            },
+            fox: {
+              400: '#ff8533',
+              500: '#ff6b00',
+              600: '#cc5500',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #090b0e;
+      color: #e2e8f0;
+      background-image:
+        radial-gradient(circle at 15% 15%, rgba(0, 245, 184, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 85% 25%, rgba(255, 107, 0, 0.06) 0%, transparent 45%),
+        repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 38px, rgba(255, 255, 255, 0.015) 39px, transparent 40px);
+      overflow-x: hidden;
+    }
+    .glass-panel {
+      background: rgba(20, 25, 33, 0.82);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+      background: linear-gradient(145deg, rgba(26, 33, 43, 0.9), rgba(15, 19, 24, 0.95));
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .glass-card:hover {
+      border-color: rgba(0, 245, 184, 0.35);
+      box-shadow: 0 10px 28px -10px rgba(0, 245, 184, 0.16);
+    }
+    input[type="range"] {
+      accent-color: #00f5b8;
+    }
+    .fox-slider {
+      accent-color: #ff6b00 !important;
+    }
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f1318;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #252f3d;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #00f5b8;
+    }
+  </style>
+</head>
+<body class="min-h-screen antialiased selection:bg-mint-500 selection:text-carbon-950">
+
+  <!-- Toast Notification Container (No alert() used anywhere) -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <!-- Top Navigation & Google Auth Header -->
+  <header class="sticky top-0 z-40 glass-panel border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-mint-500 to-fox-500 p-[2px] shadow-lg shadow-mint-500/20">
+          <div class="w-full h-full bg-carbon-950 rounded-[10px] flex items-center justify-center">
+            <svg class="w-6 h-6 text-mint-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M3 17l5-5 4 4 9-9" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M14 7h7v7" stroke-linecap="round" stroke-linejoin="round" stroke="#ff6b00"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-black tracking-tight text-lg sm:text-xl text-white">TRAILGRID</span>
+            <span class="text-xs font-mono px-2 py-0.5 rounded-full bg-fox-500/20 text-fox-400 border border-fox-500/40">&amp; LINECHECK</span>
+          </div>
+          <p class="text-[11px] text-slate-400 hidden sm:block" data-i18n="tagline">MTB Engineering, Bikepark Guide &amp; Trailbuilding Suite</p>
+        </div>
+      </div>
+
+      <!-- Right Controls: Language Switcher + Google Sign-In -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Language Switcher -->
+        <div class="flex items-center bg-carbon-900 rounded-xl p-1 border border-white/10">
+          <button onclick="setLanguage('de')" id="lang-de" class="px-2.5 py-1 rounded-lg text-xs font-bold transition bg-mint-500 text-carbon-950">DE</button>
+          <button onclick="setLanguage('en')" id="lang-en" class="px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white">EN</button>
+          <button onclick="setLanguage('fr')" id="lang-fr" class="px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white">FR</button>
+        </div>
+
+        <!-- Google Sign-In Button / Profile Badge -->
+        <div id="auth-area" class="flex items-center gap-2">
+          <button id="google-login-btn" onclick="triggerGoogleSignIn()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-semibold text-xs sm:text-sm shadow-md transition active:scale-95">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"/>
+              <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/>
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/>
+            </svg>
+            <span data-i18n="googleSignIn">Mit Google anmelden</span>
+          </button>
+
+          <div id="user-profile-badge" class="hidden items-center gap-2.5 bg-carbon-850 border border-mint-500/40 rounded-xl pl-2 pr-3 py-1.5">
+            <img id="user-avatar" src="" alt="Avatar" class="w-7 h-7 rounded-full border border-mint-500 object-cover" />
+            <div class="text-left leading-tight max-w-[130px] sm:max-w-[180px] truncate">
+              <div id="user-display-name" class="text-xs font-bold text-white truncate">Rider</div>
+              <div id="user-email" class="text-[10px] text-mint-400 truncate">google@account</div>
+            </div>
+            <button onclick="signOutGoogle()" title="Abmelden" class="ml-1 p-1.5 rounded-lg bg-carbon-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 transition">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Personal Rider & Bike Sync Bar -->
+    <div class="bg-carbon-900/90 border-t border-white/5 px-4 py-2">
+      <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="font-bold text-mint-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-mint-500 animate-pulse"></span>
+            <span data-i18n="riderProfileTitle">Mein Rider- &amp; Bike-Profil:</span>
+          </span>
+          <label class="flex items-center gap-1.5 text-slate-300">
+            <span data-i18n="riderWeight">Fahrergewicht:</span>
+            <input type="number" id="global-rider-weight" value="78" min="40" max="150" onchange="syncGlobalProfile()" class="w-16 px-2 py-0.5 rounded-lg bg-carbon-800 border border-white/15 text-white font-mono text-center focus:border-mint-500 outline-none" />
+            <span>kg</span>
+          </label>
+          <label class="flex items-center gap-1.5 text-slate-300">
+            <span data-i18n="bikeCategory">Bike-Klasse:</span>
+            <select id="global-bike-cat" onchange="syncGlobalProfile()" class="px-2 py-0.5 rounded-lg bg-carbon-800 border border-white/15 text-white focus:border-mint-500 outline-none">
+              <option value="Enduro">Enduro (160-170mm)</option>
+              <option value="Downhill">Downhill (200mm)</option>
+              <option value="Trail">Trail (130-150mm)</option>
+              <option value="Freeride">Freeride / Park (180mm)</option>
+              <option value="Dirt">Dirt Jump / Slopestyle</option>
+              <option value="E-MTB">E-MTB Full Power</option>
+            </select>
+          </label>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="profile-sync-status" class="text-[11px] text-slate-400 font-mono">Lokal aktiv</span>
+          <button onclick="saveGlobalProfile()" class="px-2.5 py-1 rounded-lg bg-mint-500/15 hover:bg-mint-500/25 text-mint-400 border border-mint-500/30 font-semibold transition">
+            Profil speichern
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Navigation Tabs -->
+    <nav class="max-w-7xl mx-auto px-4 py-2 overflow-x-auto flex items-center gap-1.5 no-scrollbar">
+      <button onclick="switchTab('shaper')" data-tab="shaper" class="nav-btn active-nav px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap bg-mint-500 text-carbon-950 transition">
+        🚀 Jump &amp; Auto-Landing Shaper
+      </button>
+      <button onclick="switchTab('kicker')" data-tab="kicker" class="nav-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-slate-300 hover:bg-carbon-800 transition">
+        🪚 10x10cm Wood Kicker &amp; Trail Secrets
+      </button>
+      <button onclick="switchTab('calculators')" data-tab="calculators" class="nav-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-slate-300 hover:bg-carbon-800 transition">
+        ⚙️ Suspension, Gear, Brake &amp; Gravity
+      </button>
+      <button onclick="switchTab('bikeparks')" data-tab="bikeparks" class="nav-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-slate-300 hover:bg-carbon-800 transition">
+        🏔️ 39 Bikeparks &amp; Gatsch-O-Meter
+      </button>
+      <button onclick="switchTab('bikes')" data-tab="bikes" class="nav-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-slate-300 hover:bg-carbon-800 transition">
+        🚲 100 MTB Database &amp; 3-Click Advisor
+      </button>
+      <button onclick="switchTab('media')" data-tab="media" class="nav-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-slate-300 hover:bg-carbon-800 transition">
+        🎬 Jump Gallery, Videos &amp; Checklist
+      </button>
+      <button onclick="switchTab('arcade')" data-tab="arcade" class="nav-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-slate-300 hover:bg-carbon-800 transition">
+        🕹️ MTB Arcade (Q/E &amp; Tycoon)
+      </button>
+    </nav>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-8">
+
+    <!-- ===================================================================== -->
+    <!-- TAB 1: DYNAMIC JUMP & AUTO-LANDING SHAPER                             -->
+    <!-- ===================================================================== -->
+    <section id="tab-shaper" class="tab-section space-y-6">
+      <div class="glass-panel rounded-2xl p-5 sm:p-6">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-4 mb-6">
+          <div>
+            <span class="text-xs font-mono uppercase tracking-wider text-mint-400">Dynamic Physics &amp; Earthwork Geometry</span>
+            <h1 class="text-2xl sm:text-3xl font-black text-white mt-1">Jump &amp; Auto-Landing Shaper</h1>
+            <p class="text-sm text-slate-400 mt-1">
+              Die Landung passt sich in <span class="text-mint-400 font-semibold">Höhe, Länge, Neigung und Abstand</span> automatisch an deinen Absprung an — wähle zusätzlich zwischen Step-Up, Level Table oder Step-Down!
+            </p>
+          </div>
+          <!-- Preset Quick Buttons -->
+          <div class="flex flex-wrap gap-2">
+            <button onclick="applyJumpPreset(22, 24, 1.1, 'table')" class="px-3 py-1.5 rounded-xl bg-carbon-800 hover:bg-carbon-700 text-xs font-semibold border border-white/10">Flow Table</button>
+            <button onclick="applyJumpPreset(32, 34, 1.8, 'stepup')" class="px-3 py-1.5 rounded-xl bg-carbon-800 hover:bg-carbon-700 text-xs font-semibold border border-mint-500/30 text-mint-400">Big Step-Up</button>
+            <button onclick="applyJumpPreset(38, 28, 2.2, 'stepdown')" class="px-3 py-1.5 rounded-xl bg-carbon-800 hover:bg-carbon-700 text-xs font-semibold border border-fox-500/30 text-fox-400">Pro Step-Down</button>
+            <button onclick="applyJumpPreset(26, 44, 1.6, 'table')" class="px-3 py-1.5 rounded-xl bg-carbon-800 hover:bg-carbon-700 text-xs font-semibold border border-white/10">Dirt Lip High-Pop</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Controls Left Column -->
+          <div class="lg:col-span-4 space-y-5 bg-carbon-900/70 p-5 rounded-2xl border border-white/5">
+            <!-- Landing Type Selector -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Landungs-Typ (Terrain-Profil)</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button onclick="setLandingType('stepup')" id="ltype-stepup" class="ltype-btn py-2 px-2 rounded-xl text-xs font-bold border border-white/10 bg-carbon-800 text-slate-300 hover:border-mint-500/50 transition">
+                  ⬆️ Step-Up<br><span class="text-[10px] font-normal opacity-75">Höhere Landung</span>
+                </button>
+                <button onclick="setLandingType('table')" id="ltype-table" class="ltype-btn py-2 px-2 rounded-xl text-xs font-bold border border-mint-500 bg-mint-500/20 text-mint-400 transition">
+                  ➡️ Level Table<br><span class="text-[10px] font-normal opacity-75">Gleiche Höhe</span>
+                </button>
+                <button onclick="setLandingType('stepdown')" id="ltype-stepdown" class="ltype-btn py-2 px-2 rounded-xl text-xs font-bold border border-white/10 bg-carbon-800 text-slate-300 hover:border-fox-500/50 transition">
+                  ⬇️ Step-Down<br><span class="text-[10px] font-normal opacity-75">Tiefere Landung</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Speed Slider -->
+            <div>
+              <div class="flex justify-between text-xs font-bold mb-1">
+                <span class="text-slate-300">Anfahrtsgeschwindigkeit</span>
+                <span id="val-jump-speed" class="font-mono text-mint-400">28 km/h</span>
+              </div>
+              <input type="range" id="jump-speed" min="12" max="55" value="28" oninput="updateJumpShaper()" class="w-full" />
+              <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                <span>12 km/h (Skill)</span>
+                <span>35 km/h (Park)</span>
+                <span>55 km/h (World Cup)</span>
+              </div>
+            </div>
+
+            <!-- Takeoff Angle Slider -->
+            <div>
+              <div class="flex justify-between text-xs font-bold mb-1">
+                <span class="text-slate-300">Absprungwinkel (Lip Angle)</span>
+                <span id="val-jump-angle" class="font-mono text-fox-400">30°</span>
+              </div>
+              <input type="range" id="jump-angle" min="12" max="55" value="30" oninput="updateJumpShaper()" class="w-full fox-slider" />
+              <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                <span>12° (Speed)</span>
+                <span>32° (Enduro)</span>
+                <span>55° (Steep Dirt)</span>
+              </div>
+            </div>
+
+            <!-- Kicker Height Slider -->
+            <div>
+              <div class="flex justify-between text-xs font-bold mb-1">
+                <span class="text-slate-300">Absprunghöhe (Kicker Height)</span>
+                <span id="val-jump-height" class="font-mono text-mint-400">1.40 m</span>
+              </div>
+              <input type="range" id="jump-height" min="0.4" max="3.5" step="0.1" value="1.4" oninput="updateJumpShaper()" class="w-full" />
+            </div>
+
+            <!-- Landing Safety Margin / Sweetspot Length Factor -->
+            <div>
+              <div class="flex justify-between text-xs font-bold mb-1">
+                <span class="text-slate-300">Landungs-Längenfaktor (Sweetspot)</span>
+                <span id="val-land-factor" class="font-mono text-fox-400">1.0x (Standard)</span>
+              </div>
+              <input type="range" id="land-factor" min="0.75" max="1.5" step="0.05" value="1.0" oninput="updateJumpShaper()" class="w-full fox-slider" />
+            </div>
+
+            <!-- Save Jump Setup Button -->
+            <button onclick="saveCurrentJumpDesign()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-mint-500 to-mint-600 text-carbon-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-mint-500/20 hover:opacity-95 transition">
+              💾 Sprung- &amp; Landungs-Setup speichern
+            </button>
+          </div>
+
+          <!-- Dynamic SVG Visualization & Live Output Metrics Right Column -->
+          <div class="lg:col-span-8 flex flex-col justify-between space-y-4">
+            <!-- SVG Canvas Wrapper -->
+            <div class="relative bg-carbon-950 rounded-2xl border border-white/10 p-3 overflow-hidden">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2 px-1">
+                <span class="text-xs font-mono text-slate-400">LIVE TRAJECTORY &amp; AUTO-SHAPED LANDING</span>
+                <span id="landing-shape-badge" class="text-xs font-mono px-2.5 py-0.5 rounded-full bg-mint-500/15 text-mint-400 border border-mint-500/30">
+                  Landung: Automatisch angepasst
+                </span>
+              </div>
+              <svg id="jump-svg" viewBox="0 0 820 340" class="w-full h-auto rounded-xl bg-[#07090c]">
+                <defs>
+                  <linearGradient id="kickerGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#ff6b00" stop-opacity="0.85"/>
+                    <stop offset="100%" stop-color="#7c2d12" stop-opacity="0.35"/>
+                  </linearGradient>
+                  <linearGradient id="landingGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#00f5b8" stop-opacity="0.85"/>
+                    <stop offset="100%" stop-color="#064e3b" stop-opacity="0.35"/>
+                  </linearGradient>
+                  <pattern id="gridPattern" width="30" height="30" patternUnits="userSpaceOnUse">
+                    <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+                  </pattern>
+                </defs>
+                <rect width="820" height="340" fill="url(#gridPattern)" />
+                <!-- Ground Baseline -->
+                <line id="svg-ground" x1="20" y1="290" x2="800" y2="290" stroke="#334155" stroke-width="2" />
+                <!-- Kicker Polygon -->
+                <path id="svg-kicker" d="" fill="url(#kickerGrad)" stroke="#ff6b00" stroke-width="2.5" />
+                <!-- Dynamic Auto-Shaped Landing Polygon -->
+                <path id="svg-landing" d="" fill="url(#landingGrad)" stroke="#00f5b8" stroke-width="2.5" />
+                <!-- Sweetspot Zone Highlight -->
+                <line id="svg-sweetspot" x1="0" y1="0" x2="0" y2="0" stroke="#ffffff" stroke-width="4" stroke-linecap="round" />
+                <!-- Parabolic Flight Trajectory -->
+                <path id="svg-trajectory" d="" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6,5" />
+                <!-- Apex Marker -->
+                <circle id="svg-apex-dot" cx="0" cy="0" r="5" fill="#ff6b00" stroke="#fff" stroke-width="1.5" />
+                <text id="svg-apex-label" x="0" y="0" fill="#fb923c" font-family="JetBrains Mono" font-size="11" font-weight="bold">Apex</text>
+                <!-- Dimension Labels inside SVG -->
+                <text id="svg-gap-label" x="300" y="315" fill="#94a3b8" font-family="JetBrains Mono" font-size="11" text-anchor="middle">Gap / Table: -- m</text>
+                <text id="svg-land-dim" x="550" y="120" fill="#00f5b8" font-family="JetBrains Mono" font-size="11" font-weight="bold">Landung H: --m | L: --m</text>
+              </svg>
+            </div>
+
+            <!-- Dynamic Calculated Output Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="glass-card p-3.5 rounded-xl">
+                <div class="text-[11px] text-slate-400">Sprungweite (Gap/Table)</div>
+                <div id="out-jump-dist" class="text-xl font-black font-mono text-white mt-0.5">6.8 m</div>
+                <div id="out-air-time" class="text-[11px] text-sky-400 font-mono">Flugzeit: 0.92 s</div>
+              </div>
+              <div class="glass-card p-3.5 rounded-xl border-mint-500/30">
+                <div class="text-[11px] text-mint-400 font-semibold">Auto-Landung Höhe</div>
+                <div id="out-land-height" class="text-xl font-black font-mono text-mint-400 mt-0.5">1.45 m</div>
+                <div id="out-land-diff" class="text-[11px] text-slate-400 font-mono">±0.05 m vs. Lip</div>
+              </div>
+              <div class="glass-card p-3.5 rounded-xl border-mint-500/30">
+                <div class="text-[11px] text-mint-400 font-semibold">Auto-Landung Länge</div>
+                <div id="out-land-length" class="text-xl font-black font-mono text-white mt-0.5">4.20 m</div>
+                <div id="out-land-slope" class="text-[11px] text-fox-400 font-mono">Neigung: 32°</div>
+              </div>
+              <div class="glass-card p-3.5 rounded-xl">
+                <div class="text-[11px] text-slate-400">Max. Flughöhe &amp; Impact</div>
+                <div id="out-max-height" class="text-xl font-black font-mono text-fox-400 mt-0.5">2.15 m</div>
+                <div id="out-impact-rating" class="text-[11px] text-emerald-400 font-mono">Smooth Match ✓</div>
+              </div>
+            </div>
+
+            <!-- Saved Jump Setups List -->
+            <div id="saved-jumps-container" class="hidden bg-carbon-900/60 border border-white/10 rounded-xl p-3">
+              <div class="text-xs font-bold text-mint-400 mb-2">Gespeicherte Jump- &amp; Landing-Blueprints:</div>
+              <div id="saved-jumps-list" class="flex flex-wrap gap-2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 2: 10x10cm WOOD KICKER BLUEPRINT GENERATOR & TRAIL SECRETS        -->
+    <!-- ===================================================================== -->
+    <section id="tab-kicker" class="tab-section hidden space-y-6">
+      <div class="glass-panel rounded-2xl p-5 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4 mb-6">
+          <div>
+            <span class="text-xs font-mono text-fox-400 uppercase">10x10cm Timber Frame Engineering</span>
+            <h2 class="text-2xl font-black text-white">10x10cm Wood Kicker Blueprint Generator</h2>
+            <p class="text-sm text-slate-400">Exakte Zuschnittliste für 10x10cm Konstruktionsvollholz (KVH), Deckbretter und Radius-Schablone.</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="selectWoodBlueprint('A')" id="bp-btn-A" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-fox-500 text-white">Blueprint A: Portable 1.8m</button>
+            <button onclick="selectWoodBlueprint('B')" id="bp-btn-B" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-carbon-800 text-slate-300">Blueprint B: Enduro 2.6m</button>
+            <button onclick="selectWoodBlueprint('C')" id="bp-btn-C" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-carbon-800 text-slate-300">Blueprint C: Pro Dirt 3.4m</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-carbon-950 rounded-2xl p-4 border border-white/10">
+            <svg id="wood-kicker-svg" viewBox="0 0 600 280" class="w-full h-auto"></svg>
+          </div>
+          <div class="space-y-4">
+            <div class="glass-card p-4 rounded-xl">
+              <h3 id="bp-title" class="font-bold text-lg text-mint-400">Blueprint A: Portable Trail Kicker (1.80m Länge)</h3>
+              <p id="bp-desc" class="text-xs text-slate-300 mt-1">Ideal für schnelle Sessions, leicht transportierbar, sanfter Transition-Radius.</p>
+              <div id="bp-specs" class="grid grid-cols-3 gap-2 mt-3 text-center font-mono text-xs"></div>
+            </div>
+            <div class="glass-card p-4 rounded-xl">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-fox-400 mb-2">Stückliste (10x10cm KVH &amp; Belag)</h4>
+              <ul id="bp-cutlist" class="space-y-1.5 text-xs text-slate-300 font-mono"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Golden Rules & Pro Trailbuilding Secrets -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-panel rounded-2xl p-5">
+          <h3 class="text-lg font-black text-mint-400 mb-3">📐 Die 6 Goldenen Regeln im Trailbau</h3>
+          <ul class="space-y-2.5 text-sm text-slate-300">
+            <li class="p-2.5 rounded-xl bg-carbon-900/80 border border-white/5"><strong class="text-white">1. Radius-Regel (2.5x - 3.5x):</strong> Der Übergangsradius einer Rampe sollte mindestens dem 2,5-fachen deines Radstands entsprechen, damit das Fahrwerk nicht durchschlägt.</li>
+            <li class="p-2.5 rounded-xl bg-carbon-900/80 border border-white/5"><strong class="text-white">2. Wasser ist der Endgegner:</strong> Immer 3–5% Quergefälle (Outslope) und Roll-Grade-Dips einbauen, damit Regenwasser sofort abläuft.</li>
+            <li class="p-2.5 rounded-xl bg-carbon-900/80 border border-white/5"><strong class="text-white">3. Landung breiter &amp; länger bauen:</strong> Die Landung immer 30% breiter als den Absprung gestalten und den Sweetspot nach unten hin lang auslaufen lassen.</li>
+            <li class="p-2.5 rounded-xl bg-carbon-900/80 border border-white/5"><strong class="text-white">4. Keine organische Erde im Kern:</strong> Humus und Wurzeln verrotten und sacken ab. Nur mineralischen Unterboden (Lehm/Schotter) verdichten.</li>
+          </ul>
+        </div>
+        <div class="glass-panel rounded-2xl p-5">
+          <h3 class="text-lg font-black text-fox-400 mb-3">🛠️ Pro Trailbuilding Secrets</h3>
+          <ul class="space-y-2.5 text-sm text-slate-300">
+            <li class="p-2.5 rounded-xl bg-carbon-900/80 border border-white/5"><strong class="text-white">Anlieger-Eingang &amp; Ausgang:</strong> Anlieger (Berms) im ersten Drittel tief ausschaufeln, im Scheitelpunkt auf 45–55° steil stellen und am Ausgang flach öffnen.</li>
+            <li class="p-2.5 rounded-xl bg-carbon-900/80 border border-white/5"><strong class="text-white">Feuchtigkeits-Test (Schneeball-Probe):</strong> Erde nur dann verdichten, wenn sie sich wie ein Schneeball formen lässt, ohne an der Schaufel zu kleben.</li>
+            <li class="p-2.5 rounded-xl bg-carbon-900/80 border border-white/5"><strong class="text-white">Lip-Kante armieren:</strong> Die obersten 15cm der Absprungkante mit eingelassenen Steinen oder einem quergelegten Rundholz vor Erosion schützen.</li>
+            <li class="p-2.5 rounded-xl bg-carbon-900/80 border border-white/5"><strong class="text-white">Sichtlinien (Sightlines):</strong> Vor blinden Sprüngen niemals Bremswellen durch zu enge Kurven direkt vor dem Anlauf provozieren.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 3: SUSPENSION, TIRE, GEAR RATIO, BRAKING & GRAVITY CALCULATORS    -->
+    <!-- ===================================================================== -->
+    <section id="tab-calculators" class="tab-section hidden space-y-6">
+      <!-- Row 1: Suspension + Tire Pressure -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Suspension Calculator -->
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-black text-white">🔧 Suspension Setup Rechner</h3>
+            <span class="text-xs font-mono text-mint-400">Gabel &amp; Dämpfer</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="text-slate-400 block mb-1">Systemgewicht (kg)</label>
+              <input type="number" id="susp-weight" value="82" oninput="calcSuspension()" class="w-full px-3 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white font-mono" />
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1">Fahrstil</label>
+              <select id="susp-style" onchange="calcSuspension()" class="w-full px-3 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white">
+                <option value="0.92">Plush / Komfort (30% Sag)</option>
+                <option value="1.0" selected>Trail / Enduro (27% Sag)</option>
+                <option value="1.12">Race / Big Jumps (23% Sag)</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <div class="glass-card p-3.5 rounded-xl">
+              <div class="text-xs text-fox-400 font-bold">Federgabel (36/38mm)</div>
+              <div id="out-fork-psi" class="text-2xl font-black font-mono text-white mt-1">88 PSI</div>
+              <div id="out-fork-rebound" class="text-xs text-slate-400 font-mono mt-1">Rebound: 7 Clicks</div>
+            </div>
+            <div class="glass-card p-3.5 rounded-xl">
+              <div class="text-xs text-mint-400 font-bold">Dämpfer (Air / Coil)</div>
+              <div id="out-shock-psi" class="text-2xl font-black font-mono text-white mt-1">185 PSI</div>
+              <div id="out-shock-coil" class="text-xs text-slate-400 font-mono mt-1">Coil: 450 lbs/in</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tire Pressure & Gravity Card -->
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-black text-white">🛞 Reifendruck &amp; Gravity-G-Force</h3>
+            <span class="text-xs font-mono text-fox-400">Tubeless &amp; Berm G-Load</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            <div>
+              <label class="text-slate-400 block mb-1">Karkasse</label>
+              <select id="tire-casing" onchange="calcTireAndGravity()" class="w-full px-2.5 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white">
+                <option value="0.12">EXO / Trail</option>
+                <option value="0" selected>DoubleDown / SuperGravity</option>
+                <option value="-0.14">DH Casing (2-Ply)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1">Anlieger-Radius (m)</label>
+              <input type="number" id="berm-radius" value="6" min="2" max="25" oninput="calcTireAndGravity()" class="w-full px-2.5 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white font-mono" />
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1">Kurventempo (km/h)</label>
+              <input type="number" id="berm-speed" value="32" min="10" max="70" oninput="calcTireAndGravity()" class="w-full px-2.5 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white font-mono" />
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-3 pt-2">
+            <div class="glass-card p-3 rounded-xl">
+              <div class="text-[11px] text-slate-400">Vorne (VR)</div>
+              <div id="out-tire-front" class="text-lg font-black font-mono text-mint-400">1.55 bar</div>
+              <div id="out-tire-front-psi" class="text-[11px] text-slate-400 font-mono">22.5 PSI</div>
+            </div>
+            <div class="glass-card p-3 rounded-xl">
+              <div class="text-[11px] text-slate-400">Hinten (HR)</div>
+              <div id="out-tire-rear" class="text-lg font-black font-mono text-fox-400">1.78 bar</div>
+              <div id="out-tire-rear-psi" class="text-[11px] text-slate-400 font-mono">25.8 PSI</div>
+            </div>
+            <div class="glass-card p-3 rounded-xl border-mint-500/30">
+              <div class="text-[11px] text-slate-400">Gravity G-Force</div>
+              <div id="out-g-force" class="text-lg font-black font-mono text-white">1.68 G</div>
+              <div id="out-eff-weight" class="text-[11px] text-mint-400 font-mono">131 kg Last</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: NEW Gear Ratio Calculator & Braking Distance Analyzer -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- NEW: Gear Ratio & Chainring Speed Calculator -->
+        <div class="glass-panel rounded-2xl p-5 space-y-4 border-mint-500/20">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-black text-white">⛓️ Gear Ratio &amp; Speed Rechner</h3>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-mint-500/15 text-mint-400">NEU</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+            <div>
+              <label class="text-slate-400 block mb-1">Kettenblatt (Zähne)</label>
+              <input type="number" id="gear-front" value="32" min="26" max="42" oninput="calcGearRatio()" class="w-full px-2.5 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white font-mono" />
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1">Ritzel hinten (Zähne)</label>
+              <input type="number" id="gear-rear" value="10" min="9" max="52" oninput="calcGearRatio()" class="w-full px-2.5 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white font-mono" />
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1">Laufradgröße</label>
+              <select id="gear-wheel" onchange="calcGearRatio()" class="w-full px-2.5 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white">
+                <option value="2.30" selected>29" (2.4 Reifen)</option>
+                <option value="2.21">27.5" (2.4 Reifen)</option>
+                <option value="2.07">26" Dirt Jump</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1">Trittfrequenz (RPM)</label>
+              <input type="number" id="gear-cadence" value="85" min="40" max="140" oninput="calcGearRatio()" class="w-full px-2.5 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white font-mono" />
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-3 pt-1">
+            <div class="glass-card p-3 rounded-xl">
+              <div class="text-[11px] text-slate-400">Übersetzung</div>
+              <div id="out-gear-ratio" class="text-lg font-black font-mono text-mint-400">3.20 : 1</div>
+              <div id="out-gear-dev" class="text-[11px] text-slate-400 font-mono">7.36 m / Kurbel</div>
+            </div>
+            <div class="glass-card p-3 rounded-xl">
+              <div class="text-[11px] text-slate-400">Speed bei RPM</div>
+              <div id="out-gear-speed" class="text-lg font-black font-mono text-white">37.5 km/h</div>
+              <div class="text-[11px] text-sky-400 font-mono">Sprint-Tempo</div>
+            </div>
+            <div class="glass-card p-3 rounded-xl">
+              <div class="text-[11px] text-slate-400">Einsatz-Bewertung</div>
+              <div id="out-gear-type" class="text-sm font-bold text-fox-400 mt-1">Bikepark / Highspeed</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEW: Braking Distance & Trail Slope Analyzer -->
+        <div class="glass-panel rounded-2xl p-5 space-y-4 border-fox-500/20">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-black text-white">🛑 Bremsweg &amp; Gefälle-Analyzer</h3>
+            <span class="text-xs font-mono px-2 py-0.5 rounded bg-fox-500/15 text-fox-400">NEU</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2.5 text-xs">
+            <div>
+              <label class="text-slate-400 block mb-1">Speed (km/h)</label>
+              <input type="number" id="brake-speed" value="35" min="10" max="80" oninput="calcBraking()" class="w-full px-2.5 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white font-mono" />
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1">Trail-Gefälle (%)</label>
+              <input type="number" id="brake-slope" value="18" min="0" max="50" oninput="calcBraking()" class="w-full px-2.5 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white font-mono" />
+            </div>
+            <div>
+              <label class="text-slate-400 block mb-1">Untergrund</label>
+              <select id="brake-surface" onchange="calcBraking()" class="w-full px-2.5 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white">
+                <option value="0.68" selected>Trockener Loam / Dirt</option>
+                <option value="0.48">Loser Schotter</option>
+                <option value="0.30">Nasse Wurzeln / Schlamm</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-3 pt-1">
+            <div class="glass-card p-3 rounded-xl">
+              <div class="text-[11px] text-slate-400">Reiner Bremsweg</div>
+              <div id="out-brake-dist" class="text-lg font-black font-mono text-fox-400">9.8 m</div>
+              <div id="out-total-stop" class="text-[11px] text-slate-400 font-mono">Inkl. Reaktion: 15.6m</div>
+            </div>
+            <div class="glass-card p-3 rounded-xl">
+              <div class="text-[11px] text-slate-400">Hangabtrieb</div>
+              <div id="out-slope-deg" class="text-lg font-black font-mono text-white">10.2°</div>
+              <div class="text-[11px] text-slate-400 font-mono">Steilheit</div>
+            </div>
+            <div class="glass-card p-3 rounded-xl">
+              <div class="text-[11px] text-slate-400">Traktions-Status</div>
+              <div id="out-brake-warn" class="text-xs font-bold text-mint-400 mt-1">Guter Grip — 200mm Rotor optimal</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 4: 39 EUROPEAN BIKEPARKS & GATSCH-O-METER                         -->
+    <!-- ===================================================================== -->
+    <section id="tab-bikeparks" class="tab-section hidden space-y-6">
+      <div class="glass-panel rounded-2xl p-5 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-black text-white">🏔️ 39 European Bikeparks &amp; Gatsch-O-Meter</h2>
+            <p class="text-sm text-slate-400">Filtere nach Land, Fokus oder aktuellem Trail-Zustand &amp; speichere deine Favoriten in deinem Google-Konto.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <input type="text" id="park-search" oninput="renderBikeparks()" placeholder="Bikepark suchen..." class="px-3 py-2 rounded-xl bg-carbon-900 border border-white/10 text-xs text-white outline-none focus:border-mint-500" />
+            <select id="park-country" onchange="renderBikeparks()" class="px-3 py-2 rounded-xl bg-carbon-900 border border-white/10 text-xs text-white">
+              <option value="ALL">Alle Länder (39)</option>
+              <option value="AT">Österreich</option>
+              <option value="DE">Deutschland</option>
+              <option value="IT">Italien</option>
+              <option value="CH">Schweiz</option>
+              <option value="FR">Frankreich</option>
+              <option value="SI">Slowenien / CZ</option>
+            </select>
+            <select id="park-gatsch" onchange="renderBikeparks()" class="px-3 py-2 rounded-xl bg-carbon-900 border border-white/10 text-xs text-white">
+              <option value="ALL">Gatsch-O-Meter: Alle</option>
+              <option value="Hero Dirt">🟢 Hero Dirt (10-30%)</option>
+              <option value="Trocken / Dusty">🟡 Trocken / Dusty</option>
+              <option value="Gatsch-Alarm">🟤 Gatsch-Alarm (&gt;65%)</option>
+            </select>
+          </div>
+        </div>
+        <div id="bikeparks-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 5: 100 MTB DATABASE & 3-CLICK BIKE ADVISOR                        -->
+    <!-- ===================================================================== -->
+    <section id="tab-bikes" class="tab-section hidden space-y-6">
+      <!-- 3-Click Bike Advisor -->
+      <div class="glass-panel rounded-2xl p-5 border-mint-500/25">
+        <h3 class="text-lg font-black text-mint-400 mb-3">🎯 3-Click Bike Advisor</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div>
+            <label class="text-slate-400 block mb-1">1. Haupteinsatz</label>
+            <select id="adv-terrain" onchange="runBikeAdvisor()" class="w-full px-3 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white">
+              <option value="Enduro">Alpen-Trails &amp; Enduro-Rennen</option>
+              <option value="Downhill">Reiner Bikepark &amp; Downhill</option>
+              <option value="Trail">Hometrails &amp; Touren</option>
+              <option value="Dirt">Dirt Jumps &amp; Pumptrack</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">2. Laufrad-Vorliebe</label>
+            <select id="adv-wheel" onchange="runBikeAdvisor()" class="w-full px-3 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white">
+              <option value="Mullet">Mullet (29" VR / 27.5" HR)</option>
+              <option value="29">Full 29" (Max. Speed)</option>
+              <option value="26">26" / 27.5" (Max. Agilität)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">3. Budget-Rahmen</label>
+            <select id="adv-budget" onchange="runBikeAdvisor()" class="w-full px-3 py-2 rounded-xl bg-carbon-900 border border-white/10 text-white">
+              <option value="3500">Bis 3.500 € (Preis-Leistung)</option>
+              <option value="5500" selected>3.500 € – 5.800 € (Sweetspot)</option>
+              <option value="12000">High-End Factory (&gt; 5.800 €)</option>
+            </select>
+          </div>
+        </div>
+        <div id="advisor-results" class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+      </div>
+
+      <!-- 100 MTB Database -->
+      <div class="glass-panel rounded-2xl p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-xl font-black text-white">🚲 100 MTB Engineering Database</h2>
+          <div class="flex gap-2">
+            <input type="text" id="bike-search" oninput="renderBikes()" placeholder="Marke oder Modell..." class="px-3 py-1.5 rounded-xl bg-carbon-900 border border-white/10 text-xs text-white" />
+            <select id="bike-cat-filter" onchange="renderBikes()" class="px-3 py-1.5 rounded-xl bg-carbon-900 border border-white/10 text-xs text-white">
+              <option value="ALL">Alle Kategorien (100)</option>
+              <option value="Enduro">Enduro</option>
+              <option value="Downhill">Downhill</option>
+              <option value="Trail">Trail</option>
+              <option value="Freeride">Freeride</option>
+              <option value="Dirt">Dirt Jump</option>
+            </select>
+          </div>
+        </div>
+        <div id="bikes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 max-h-[540px] overflow-y-auto pr-1"></div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 6: MTB JUMP GALLERY, VIDEO HUB & USED-BIKE CHECKLIST              -->
+    <!-- ===================================================================== -->
+    <section id="tab-media" class="tab-section hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- SVG Jump Geometry Gallery -->
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <h3 class="text-lg font-black text-white">🖼️ MTB Jump Geometry Gallery</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="glass-card p-3 rounded-xl">
+              <svg viewBox="0 0 240 100" class="w-full h-24 bg-carbon-950 rounded-lg mb-2">
+                <path d="M10,85 Q55,85 80,50 L80,85 Z" fill="#ff6b00" opacity="0.8"/>
+                <path d="M80,50 L145,50 L185,85 L80,85 Z" fill="#00f5b8" opacity="0.7"/>
+                <path d="M80,50 Q112,20 145,50" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,3"/>
+              </svg>
+              <div class="font-bold text-xs text-white">Tabletop Jump</div>
+              <p class="text-[11px] text-slate-400">Geschlossenes Plateau — ideal zum Herantasten ohne Gap-Risiko.</p>
+            </div>
+            <div class="glass-card p-3 rounded-xl">
+              <svg viewBox="0 0 240 100" class="w-full h-24 bg-carbon-950 rounded-lg mb-2">
+                <path d="M10,85 Q55,85 80,45 L80,85 Z" fill="#ff6b00" opacity="0.8"/>
+                <path d="M135,45 L185,85 L135,85 Z" fill="#00f5b8" opacity="0.8"/>
+                <path d="M80,45 Q108,15 135,45" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,3"/>
+              </svg>
+              <div class="font-bold text-xs text-white">Double / Gap Jump</div>
+              <p class="text-[11px] text-slate-400">Offene Grube zwischen Lip und Landung — volle Commitment-Line.</p>
+            </div>
+            <div class="glass-card p-3 rounded-xl">
+              <svg viewBox="0 0 240 100" class="w-full h-24 bg-carbon-950 rounded-lg mb-2">
+                <path d="M10,85 Q50,85 75,52 L75,85 Z" fill="#ff6b00" opacity="0.8"/>
+                <path d="M130,32 L185,85 L130,85 Z" fill="#00f5b8" opacity="0.8"/>
+                <path d="M75,52 Q105,12 130,32" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,3"/>
+              </svg>
+              <div class="font-bold text-xs text-white">Step-Up</div>
+              <p class="text-[11px] text-slate-400">Landung liegt höher als der Absprung — sanfter Impact am Scheitelpunkt.</p>
+            </div>
+            <div class="glass-card p-3 rounded-xl">
+              <svg viewBox="0 0 240 100" class="w-full h-24 bg-carbon-950 rounded-lg mb-2">
+                <path d="M10,60 Q45,60 70,35 L70,85 L10,85 Z" fill="#ff6b00" opacity="0.8"/>
+                <path d="M135,62 L195,92 L135,92 Z" fill="#00f5b8" opacity="0.8"/>
+                <path d="M70,35 Q105,22 135,62" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,3"/>
+              </svg>
+              <div class="font-bold text-xs text-white">Step-Down / Sharkfin</div>
+              <p class="text-[11px] text-slate-400">Lange Airtime in steiles Gelände — erfordert präzise Geschwindigkeitskontrolle.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Used-Bike Checklist & Video Hub -->
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-black text-fox-400">✅ Used-Bike Kauf-Checkliste</h3>
+            <span id="checklist-progress" class="text-xs font-mono text-mint-400">0 / 8 geprüft</span>
+          </div>
+          <div id="used-bike-checklist" class="space-y-2 text-xs"></div>
+
+          <div class="pt-2 border-t border-white/10">
+            <h4 class="text-xs font-bold uppercase text-slate-400 mb-2">🎬 Video &amp; Coaching Hub</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <a href="https://www.youtube.com/results?search_query=mtb+jumping+technique+lip+control" target="_blank" rel="noopener" class="p-2.5 rounded-xl bg-carbon-900 hover:bg-carbon-800 border border-white/10 flex items-center justify-between">
+                <span>▶ Lip-Kontrolle &amp; Bunnyhop Timing</span>
+                <span class="text-mint-400 font-mono">YouTube ↗</span>
+              </a>
+              <a href="https://www.youtube.com/results?search_query=mountain+bike+trail+building+berms+jumps" target="_blank" rel="noopener" class="p-2.5 rounded-xl bg-carbon-900 hover:bg-carbon-800 border border-white/10 flex items-center justify-between">
+                <span>▶ Trailbuilding: Radius &amp; Kompaktion</span>
+                <span class="text-fox-400 font-mono">YouTube ↗</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 7: MTB ARCADE MINI-GAMES (LANDING ANGLE Q/E & TRAIL TYCOON)       -->
+    <!-- ===================================================================== -->
+    <section id="tab-arcade" class="tab-section hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Game 1: Landing-Angle Pro (Q / E Keys + Touch Buttons) -->
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-black text-mint-400">🎮 Landing-Angle Pro (Q / E)</h3>
+              <p class="text-xs text-slate-400">Passe deinen Bike-Winkel in der Luft exakt an die Hangneigung an!</p>
+            </div>
+            <div class="text-right font-mono">
+              <div class="text-xs text-slate-400">Score</div>
+              <div id="game-score" class="text-xl font-black text-white">0</div>
+            </div>
+          </div>
+          <canvas id="angle-game-canvas" class="w-full h-56 rounded-xl bg-carbon-950 border border-white/10"></canvas>
+          <div class="flex flex-wrap items-center justify-center gap-3">
+            <button onmousedown="tiltBike(-8)" ontouchstart="tiltBike(-8)" class="px-4 py-2.5 rounded-xl bg-carbon-800 hover:bg-carbon-700 text-white font-bold text-xs border border-white/15 shadow">
+              ↺ Nose Up [Q]
+            </button>
+            <button onclick="launchArcadeJump()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-mint-500 to-fox-500 text-carbon-950 font-black text-xs shadow-lg">
+              🚀 Sprung starten / Neu
+            </button>
+            <button onmousedown="tiltBike(8)" ontouchstart="tiltBike(8)" class="px-4 py-2.5 rounded-xl bg-carbon-800 hover:bg-carbon-700 text-white font-bold text-xs border border-white/15 shadow">
+              ↻ Nose Down [E]
+            </button>
+          </div>
+        </div>
+
+        <!-- Game 2: Trail-Builder Tycoon (Fixed Purchase Buttons) -->
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-black text-fox-400">⛏️ Trail-Builder Tycoon</h3>
+              <p class="text-xs text-slate-400">Baue Features, kassiere Bikepark-Tickets &amp; schalte neue Lines frei.</p>
+            </div>
+            <div class="text-right font-mono">
+              <div class="text-xs text-slate-400">Budget / Tickets</div>
+              <div id="tycoon-cash" class="text-xl font-black text-mint-400">150 €</div>
+            </div>
+          </div>
+
+          <div class="bg-carbon-950 p-4 rounded-xl border border-white/10 flex items-center justify-between">
+            <div>
+              <div class="text-xs text-slate-400">Passives Einkommen</div>
+              <div id="tycoon-income" class="text-lg font-black font-mono text-white">5 € / Sek</div>
+            </div>
+            <button onclick="digShovel()" class="px-4 py-3 rounded-xl bg-fox-500 hover:bg-fox-400 text-white font-black text-xs shadow-lg active:scale-95 transition">
+              🪏 Schaufeln (+10 €)
+            </button>
+          </div>
+
+          <div id="tycoon-upgrades" class="space-y-2"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Firebase Authentication & Firestore Integration + Core App Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signInWithCustomToken,
+      signInAnonymously,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      setDoc,
+      getDoc
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // App State
+    window.appState = {
+      lang: 'de',
+      user: null,
+      isGoogleUser: false,
+      riderWeight: 78,
+      bikeCategory: 'Enduro',
+      landingType: 'table',
+      savedJumps: [],
+      favoriteParks: [],
+      checklistDone: {}
+    };
+
+    // Toast Notification Helper (Replaces alert)
+    window.showToast = function (msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      const colors = {
+        success: 'border-mint-500 bg-carbon-900 text-mint-400',
+        error: 'border-red-500 bg-carbon-900 text-red-400',
+        info: 'border-fox-500 bg-carbon-900 text-white'
+      };
+      el.className = `pointer-events-auto px-4 py-3 rounded-xl border ${colors[type] || colors.info} shadow-xl text-xs font-semibold transition-all`;
+      el.textContent = msg;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+      }, 3600);
+    };
+
+    // Initialize Firebase safely
+    let auth = null;
+    let db = null;
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'trailgrid-linecheck-app';
+
+    try {
+      if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // Listen for Auth State Changes
+        onAuthStateChanged(auth, async (user) => {
+          window.appState.user = user;
+          const isGoogle = user && !user.isAnonymous && user.providerData && user.providerData.some(p => p.providerId === 'google.com');
+          window.appState.isGoogleUser = Boolean(isGoogle);
+          updateAuthUI(user, isGoogle);
+
+          if (user && db) {
+            await loadCloudUserData(user.uid);
+          }
+        });
+
+        // Initial silent auth if token exists
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token).catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.warn('Firebase init note:', err);
+    }
+
+    // Real Google Sign-In with GoogleAuthProvider
+    window.triggerGoogleSignIn = async function () {
+      if (!auth) {
+        showToast('Firebase Auth Konfiguration nicht verfügbar.', 'error');
+        return;
+      }
+      try {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        showToast(`Willkommen zurück, ${user.displayName || 'Rider'}! Google-Konto verbunden.`, 'success');
+      } catch (error) {
+        if (error.code === 'auth/popup-closed-by-user') {
+          showToast('Google-Anmeldung abgebrochen.', 'info');
+        } else if (error.code === 'auth/unauthorized-domain') {
+          showToast('Domain nicht in Firebase Auth autorisiert. Bitte Domain freischalten.', 'error');
+        } else {
+          showToast(`Google Login Fehler: ${error.message}`, 'error');
+        }
+      }
+    };
+
+    window.signOutGoogle = async function () {
+      if (!auth) return;
+      try {
+        await signOut(auth);
+        showToast('Erfolgreich vom Google-Konto abgemeldet.', 'info');
+      } catch (e) {
+        showToast('Fehler beim Abmelden.', 'error');
+      }
+    };
+
+    function updateAuthUI(user, isGoogle) {
+      const loginBtn = document.getElementById('google-login-btn');
+      const badge = document.getElementById('user-profile-badge');
+      const syncLabel = document.getElementById('profile-sync-status');
+
+      if (user && isGoogle) {
+        loginBtn.classList.add('hidden');
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+        document.getElementById('user-display-name').textContent = user.displayName || 'Google Rider';
+        document.getElementById('user-email').textContent = user.email || '';
+        const avatarEl = document.getElementById('user-avatar');
+        avatarEl.src = user.photoURL || 'https://placehold.co/64x64/00f5b8/090b0e?text=MTB';
+        avatarEl.onerror = () => { avatarEl.src = 'https://placehold.co/64x64/00f5b8/090b0e?text=MTB'; };
+        syncLabel.textContent = '☁️ Google Cloud Sync aktiv';
+        syncLabel.className = 'text-[11px] text-mint-400 font-mono';
+      } else {
+        loginBtn.classList.remove('hidden');
+        badge.classList.add('hidden');
+        badge.classList.remove('flex');
+        syncLabel.textContent = 'Nicht angemeldet (Session)';
+        syncLabel.className = 'text-[11px] text-slate-400 font-mono';
+      }
+    }
+
+    // Cloud Persistence (Strict Path Rule 1)
+    async function loadCloudUserData(uid) {
+      if (!db || !uid) return;
+      try {
+        const userDocRef = doc(db, 'artifacts', appId, 'users', uid, 'profile', 'settings');
+        const snap = await getDoc(userDocRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.riderWeight) {
+            window.appState.riderWeight = data.riderWeight;
+            document.getElementById('global-rider-weight').value = data.riderWeight;
+          }
+          if (data.bikeCategory) {
+            window.appState.bikeCategory = data.bikeCategory;
+            document.getElementById('global-bike-cat').value = data.bikeCategory;
+          }
+          if (Array.isArray(data.savedJumps)) {
+            window.appState.savedJumps = data.savedJumps;
+            renderSavedJumps();
+          }
+          if (Array.isArray(data.favoriteParks)) {
+            window.appState.favoriteParks = data.favoriteParks;
+            renderBikeparks();
+          }
+          syncGlobalProfile(false);
+        }
+      } catch (e) {
+        console.warn('Cloud load skipped:', e);
+      }
+    }
+
+    window.persistCloudUserData = async function () {
+      const user = window.appState.user;
+      if (!db || !user || !window.appState.isGoogleUser) return;
+      try {
+        const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'settings');
+        await setDoc(userDocRef, {
+          riderWeight: window.appState.riderWeight,
+          bikeCategory: window.appState.bikeCategory,
+          savedJumps: window.appState.savedJumps,
+          favoriteParks: window.appState.favoriteParks,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      } catch (e) {
+        console.warn('Cloud save error:', e);
+      }
+    };
+  </script>
+
+  <!-- Main Application Logic -->
+  <script>
+    // =========================================================================
+    // 1. MULTI-LANGUAGE TRANSLATIONS (DE / EN / FR)
+    // =========================================================================
+    const i18n = {
+      de: {
+        tagline: 'MTB Engineering, Bikepark Guide & Trailbuilding Suite',
+        googleSignIn: 'Mit Google anmelden',
+        riderProfileTitle: 'Mein Rider- & Bike-Profil:',
+        riderWeight: 'Fahrergewicht:',
+        bikeCategory: 'Bike-Klasse:'
+      },
+      en: {
+        tagline: 'MTB Engineering, Bikepark Guide & Trailbuilding Suite',
+        googleSignIn: 'Sign in with Google',
+        riderProfileTitle: 'My Rider & Bike Profile:',
+        riderWeight: 'Rider Weight:',
+        bikeCategory: 'Bike Category:'
+      },
+      fr: {
+        tagline: 'Ingénierie VTT, Guide Bikepark & Trailbuilding',
+        googleSignIn: 'Connexion avec Google',
+        riderProfileTitle: 'Mon Profil Pilote & VTT :',
+        riderWeight: 'Poids pilote :',
+        bikeCategory: 'Catégorie VTT :'
+      }
+    };
+
+    function setLanguage(lang) {
+      window.appState.lang = lang;
+      ['de', 'en', 'fr'].forEach(l => {
+        const btn = document.getElementById(`lang-${l}`);
+        btn.className = l === lang
+          ? 'px-2.5 py-1 rounded-lg text-xs font-bold transition bg-mint-500 text-carbon-950'
+          : 'px-2.5 py-1 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white';
+      });
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[lang] && i18n[lang][key]) el.textContent = i18n[lang][key];
+      });
+    }
+
+    // =========================================================================
+    // 2. TAB NAVIGATION & GLOBAL RIDER PROFILE SYNC
+    // =========================================================================
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-section').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const active = btn.getAttribute('data-tab') === tabId;
+        btn.className = active
+          ? 'nav-btn active-nav px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap bg-mint-500 text-carbon-950 transition'
+          : 'nav-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-slate-300 hover:bg-carbon-800 transition';
+      });
+
+      if (tabId === 'arcade') resizeArcadeCanvas();
+    }
+
+    function syncGlobalProfile(notify = false) {
+      const w = parseFloat(document.getElementById('global-rider-weight').value) || 78;
+      const cat = document.getElementById('global-bike-cat').value;
+      window.appState.riderWeight = w;
+      window.appState.bikeCategory = cat;
+
+      // Sync into Suspension & Tire Calculators (Rider + ~4kg gear)
+      const suspWeightInput = document.getElementById('susp-weight');
+      if (suspWeightInput) {
+        suspWeightInput.value = Math.round(w + 4);
+        calcSuspension();
+        calcTireAndGravity();
+      }
+      if (notify) showToast(`Profil synchronisiert: ${w} kg | ${cat}`, 'info');
+    }
+
+    async function saveGlobalProfile() {
+      syncGlobalProfile(false);
+      if (window.appState.isGoogleUser) {
+        await window.persistCloudUserData();
+        showToast('Profil in deinem Google-Konto gespeichert! ☁️', 'success');
+      } else {
+        showToast('Profil für diese Session aktualisiert. Melde dich mit Google an für Cloud-Speicherung!', 'info');
+      }
+    }
+
+    // =========================================================================
+    // 3. DYNAMIC JUMP & AUTO-LANDING SHAPER (CORE FEATURE)
+    // =========================================================================
+    function setLandingType(type) {
+      window.appState.landingType = type;
+      ['stepup', 'table', 'stepdown'].forEach(t => {
+        const btn = document.getElementById(`ltype-${t}`);
+        if (t === type) {
+          btn.className = t === 'stepdown'
+            ? 'ltype-btn py-2 px-2 rounded-xl text-xs font-bold border border-fox-500 bg-fox-500/20 text-fox-400 transition'
+            : 'ltype-btn py-2 px-2 rounded-xl text-xs font-bold border border-mint-500 bg-mint-500/20 text-mint-400 transition';
+        } else {
+          btn.className = 'ltype-btn py-2 px-2 rounded-xl text-xs font-bold border border-white/10 bg-carbon-800 text-slate-300 transition';
+        }
+      });
+      updateJumpShaper();
+    }
+
+    function applyJumpPreset(speed, angle, height, type) {
+      document.getElementById('jump-speed').value = speed;
+      document.getElementById('jump-angle').value = angle;
+      document.getElementById('jump-height').value = height;
+      setLandingType(type);
+    }
+
+    function updateJumpShaper() {
+      const speedKmh = parseFloat(document.getElementById('jump-speed').value);
+      const angleDeg = parseFloat(document.getElementById('jump-angle').value);
+      const kickerH = parseFloat(document.getElementById('jump-height').value);
+      const landFactor = parseFloat(document.getElementById('land-factor').value);
+      const lType = window.appState.landingType;
+
+      document.getElementById('val-jump-speed').textContent = `${speedKmh} km/h`;
+      document.getElementById('val-jump-angle').textContent = `${angleDeg}°`;
+      document.getElementById('val-jump-height').textContent = `${kickerH.toFixed(2)} m`;
+      document.getElementById('val-land-factor').textContent = `${landFactor.toFixed(2)}x`;
+
+      const g = 9.81;
+      const v0 = speedKmh / 3.6;
+      const rad = (angleDeg * Math.PI) / 180;
+      const vx = v0 * Math.cos(rad);
+      const vy = v0 * Math.sin(rad);
+
+      // Apex height above ground
+      const apexRise = (vy * vy) / (2 * g);
+      const maxH = kickerH + apexRise;
+
+      // Dynamic Landing Height calculation based on Landing Type & Jump Energy
+      let landingH = kickerH;
+      if (lType === 'stepup') {
+        // Higher landing: scales with jump apex so it stays well below peak
+        landingH = Math.min(kickerH + apexRise * 0.62, kickerH + 2.4);
+      } else if (lType === 'table') {
+        // Level table with slight safety crown (+5% of apex)
+        landingH = kickerH + Math.min(0.25, apexRise * 0.08);
+      } else if (lType === 'stepdown') {
+        // Lower landing: drops proportionally to speed & kicker height
+        landingH = Math.max(0.35, kickerH * 0.45);
+      }
+
+      // Solve flight time t until projectile reaches landingH on the descending arc
+      // y(t) = kickerH + vy*t - 0.5*g*t^2 = landingH
+      const deltaH = kickerH - landingH;
+      const discriminant = Math.max(0.05, vy * vy + 2 * g * deltaH);
+      const flightTime = (vy + Math.sqrt(discriminant)) / g;
+      const jumpDistance = vx * flightTime;
+
+      // Impact angle at touchdown
+      const vyImpact = vy - g * flightTime;
+      const impactAngleDeg = Math.abs((Math.atan2(vyImpact, vx) * 180) / Math.PI);
+
+      // Auto-shaped Landing Slope Angle & Landing Length:
+      // Steeper/higher jumps -> steeper & longer landing deck to absorb kinetic energy smoothly!
+      const landingSlopeDeg = Math.min(44, Math.max(18, Math.round(impactAngleDeg * 0.92)));
+      const landingSlopeRad = (landingSlopeDeg * Math.PI) / 180;
+      const baseRunLength = landingH / Math.tan(landingSlopeRad);
+      const speedBonusLength = (speedKmh / 30) * 1.4;
+      const landingLength = (baseRunLength + speedBonusLength) * landFactor;
+
+      // Update Metric Readouts
+      document.getElementById('out-jump-dist').textContent = `${jumpDistance.toFixed(1)} m`;
+      document.getElementById('out-air-time').textContent = `Flugzeit: ${flightTime.toFixed(2)} s`;
+      document.getElementById('out-land-height').textContent = `${landingH.toFixed(2)} m`;
+      const hDiff = landingH - kickerH;
+      document.getElementById('out-land-diff').textContent = `${hDiff >= 0 ? '+' : ''}${hDiff.toFixed(2)} m vs. Lip`;
+      document.getElementById('out-land-length').textContent = `${landingLength.toFixed(2)} m`;
+      document.getElementById('out-land-slope').textContent = `Neigung: ${landingSlopeDeg}°`;
+      document.getElementById('out-max-height').textContent = `${maxH.toFixed(2)} m`;
+
+      const shapeText = lType === 'stepup'
+        ? `Step-Up: Landung +${hDiff.toFixed(2)}m höher & ${landingLength.toFixed(1)}m lang`
+        : lType === 'stepdown'
+          ? `Step-Down: Landung ${hDiff.toFixed(2)}m tiefer & ${landingLength.toFixed(1)}m lang`
+          : `Level Table: ${jumpDistance.toFixed(1)}m Deck & ${landingLength.toFixed(1)}m Auslauf`;
+      document.getElementById('landing-shape-badge').textContent = shapeText;
+
+      // Render Scaled SVG Geometry
+      renderJumpSVG({
+        kickerH,
+        angleDeg,
+        landingH,
+        landingLength,
+        jumpDistance,
+        maxH,
+        vx,
+        vy,
+        g,
+        flightTime,
+        lType
+      });
+    }
+
+    function renderJumpSVG(p) {
+      const groundY = 290;
+      const startX = 45;
+      const totalSpanMeters = Math.max(12, p.jumpDistance + p.landingLength + 5.5);
+      const maxHeightMeters = Math.max(4.5, p.maxH + 1.1);
+
+      const scaleX = 730 / totalSpanMeters;
+      const scaleY = 235 / maxHeightMeters;
+
+      // Kicker geometry
+      const kickerBaseLenM = Math.max(1.8, p.kickerH / Math.tan((p.angleDeg * Math.PI) / 180) * 1.45);
+      const lipX = startX + kickerBaseLenM * scaleX;
+      const lipY = groundY - p.kickerH * scaleY;
+      const ctrlX = startX + (kickerBaseLenM * 0.58) * scaleX;
+
+      const kickerPath = `M ${startX},${groundY} Q ${ctrlX},${groundY} ${lipX},${lipY} L ${lipX},${groundY} Z`;
+      document.getElementById('svg-kicker').setAttribute('d', kickerPath);
+
+      // Landing geometry (dynamically adapts in height, length, steepness & position!)
+      const landPeakX = lipX + p.jumpDistance * scaleX;
+      const landPeakY = groundY - p.landingH * scaleY;
+      const landEndX = Math.min(805, landPeakX + p.landingLength * scaleX);
+
+      let landingPath = '';
+      if (p.lType === 'table') {
+        // Closed tabletop deck connecting lip to landing knuckle
+        landingPath = `M ${lipX},${groundY} L ${lipX},${lipY} L ${landPeakX},${landPeakY} Q ${(landPeakX + landEndX) / 2},${landPeakY + (groundY - landPeakY) * 0.35} ${landEndX},${groundY} Z`;
+      } else {
+        // Open gap landing mound (Step-Up or Step-Down)
+        const frontBaseX = Math.max(lipX + 18, landPeakX - p.landingH * scaleY * 0.65);
+        landingPath = `M ${frontBaseX},${groundY} L ${landPeakX},${landPeakY} Q ${(landPeakX + landEndX) / 2},${landPeakY + (groundY - landPeakY) * 0.35} ${landEndX},${groundY} Z`;
+      }
+      document.getElementById('svg-landing').setAttribute('d', landingPath);
+
+      // Sweetspot line on upper 65% of landing slope
+      const sweetEndX = landPeakX + (landEndX - landPeakX) * 0.65;
+      const sweetEndY = landPeakY + (groundY - landPeakY) * 0.52;
+      const sweetEl = document.getElementById('svg-sweetspot');
+      sweetEl.setAttribute('x1', landPeakX);
+      sweetEl.setAttribute('y1', landPeakY);
+      sweetEl.setAttribute('x2', sweetEndX);
+      sweetEl.setAttribute('y2', sweetEndY);
+
+      // Parabolic Trajectory Points
+      let trajD = `M ${lipX},${lipY}`;
+      const steps = 28;
+      for (let i = 1; i <= steps; i++) {
+        const t = (p.flightTime * i) / steps;
+        const dx = p.vx * t;
+        const yM = p.kickerH + p.vy * t - 0.5 * p.g * t * t;
+        const px = lipX + dx * scaleX;
+        const py = groundY - yM * scaleY;
+        trajD += ` L ${px.toFixed(1)},${py.toFixed(1)}`;
+      }
+      document.getElementById('svg-trajectory').setAttribute('d', trajD);
+
+      // Apex Marker
+      const tApex = p.vy / p.g;
+      const apexX = lipX + (p.vx * tApex) * scaleX;
+      const apexY = groundY - p.maxH * scaleY;
+      document.getElementById('svg-apex-dot').setAttribute('cx', apexX);
+      document.getElementById('svg-apex-dot').setAttribute('cy', apexY);
+      const apexLabel = document.getElementById('svg-apex-label');
+      apexLabel.setAttribute('x', apexX - 24);
+      apexLabel.setAttribute('y', Math.max(18, apexY - 10));
+      apexLabel.textContent = `Apex ${p.maxH.toFixed(2)}m`;
+
+      // Gap & Landing Labels
+      const gapLabel = document.getElementById('svg-gap-label');
+      gapLabel.setAttribute('x', (lipX + landPeakX) / 2);
+      gapLabel.textContent = `Distanz: ${p.jumpDistance.toFixed(1)} m`;
+
+      const landDim = document.getElementById('svg-land-dim');
+      landDim.setAttribute('x', Math.min(620, landPeakX + 8));
+      landDim.setAttribute('y', Math.max(30, landPeakY - 12));
+      landDim.textContent = `Landung H:${p.landingH.toFixed(2)}m | L:${p.landingLength.toFixed(1)}m`;
+    }
+
+    async function saveCurrentJumpDesign() {
+      const item = {
+        id: Date.now(),
+        type: window.appState.landingType.toUpperCase(),
+        speed: document.getElementById('jump-speed').value,
+        angle: document.getElementById('jump-angle').value,
+        height: document.getElementById('jump-height').value,
+        dist: document.getElementById('out-jump-dist').textContent,
+        landH: document.getElementById('out-land-height').textContent,
+        landL: document.getElementById('out-land-length').textContent
+      };
+      window.appState.savedJumps.unshift(item);
+      if (window.appState.savedJumps.length > 6) window.appState.savedJumps.pop();
+      renderSavedJumps();
+      await window.persistCloudUserData();
+      showToast('Jump- & Auto-Landing Setup gespeichert!', 'success');
+    }
+
+    function renderSavedJumps() {
+      const container = document.getElementById('saved-jumps-container');
+      const list = document.getElementById('saved-jumps-list');
+      if (!window.appState.savedJumps.length) {
+        container.classList.add('hidden');
+        return;
+      }
+      container.classList.remove('hidden');
+      list.innerHTML = window.appState.savedJumps.map(j => `
+        <button onclick="applyJumpPreset(${j.speed}, ${j.angle}, ${j.height}, '${j.type.toLowerCase()}')" class="px-3 py-1.5 rounded-lg bg-carbon-800 hover:bg-carbon-700 border border-mint-500/30 text-[11px] font-mono text-slate-200">
+          ${j.type}: ${j.dist} (Land H:${j.landH} / L:${j.landL})
+        </button>
+      `).join('');
+    }
+
+    // =========================================================================
+    // 4. 10x10cm WOOD KICKER BLUEPRINT GENERATOR (A / B / C)
+    // =========================================================================
+    const woodBlueprints = {
+      A: {
+        title: 'Blueprint A: Portable Trail Kicker (1.80m Länge)',
+        desc: 'Kompakt, zerlegbar, 10x10cm KVH Rahmen. Perfekt für Hometrails & Wiesen-Sessions.',
+        length: '1.80 m',
+        height: '0.65 m',
+        radius: '3.20 m',
+        cutlist: [
+          '2x Seitenwangen-Bogen aus 10x10cm KVH (Länge 185cm, Radius R=320cm)',
+          '2x Bodenbalken 10x10cm KVH (Länge 180cm)',
+          '2x Vertikalstützen hinten 10x10cm KVH (Länge 55cm)',
+          '4x Querträger 10x10cm KVH (Breite 80cm)',
+          '14x Deckbretter Lärche 28x120mm (Breite 100cm, 8mm Spalt)'
+        ]
+      },
+      B: {
+        title: 'Blueprint B: Enduro Park Kicker (2.60m Länge)',
+        desc: 'Ausgewogener Transition-Radius für Highspeed-Tables und mittlere Gaps.',
+        length: '2.60 m',
+        height: '1.05 m',
+        radius: '4.40 m',
+        cutlist: [
+          '3x Seitenwangen-Träger 10x10cm KVH (Länge 265cm, Radius R=440cm)',
+          '3x Bodenbalken 10x10cm KVH (Länge 260cm) + 4x Diagonalstreben',
+          '3x Vertikalstützen hinten 10x10cm KVH (Länge 95cm)',
+          '6x Querträger 10x10cm KVH (Breite 100cm)',
+          '20x Deckbretter Lärche 30x120mm (Breite 120cm)'
+        ]
+      },
+      C: {
+        title: 'Blueprint C: Pro Dirt & Slopestyle Lip (3.40m Länge)',
+        desc: 'Steiler 42° Absprungwinkel mit massivem 10x10cm Fachwerk für maximale Airtime.',
+        length: '3.40 m',
+        height: '1.55 m',
+        radius: '5.10 m',
+        cutlist: [
+          '3x Haupt-Bogenbinder 10x10cm KVH verleimt (Länge 350cm, R=510cm)',
+          '3x Bodenbalken 10x10cm KVH (Länge 340cm) + Kreuzverstrebung',
+          '6x Vertikalstützen 10x10cm KVH (3x 145cm hinten, 3x 72cm Mitte)',
+          '8x Querträger 10x10cm KVH (Breite 120cm)',
+          '26x Deckbretter Douglasie/Lärche 32x120mm (Breite 140cm)'
+        ]
+      }
+    };
+
+    function selectWoodBlueprint(key) {
+      ['A', 'B', 'C'].forEach(k => {
+        document.getElementById(`bp-btn-${k}`).className = k === key
+          ? 'px-3.5 py-2 rounded-xl text-xs font-bold bg-fox-500 text-white'
+          : 'px-3.5 py-2 rounded-xl text-xs font-bold bg-carbon-800 text-slate-300';
+      });
+      const bp = woodBlueprints[key];
+      document.getElementById('bp-title').textContent = bp.title;
+      document.getElementById('bp-desc').textContent = bp.desc;
+      document.getElementById('bp-specs').innerHTML = `
+        <div class="p-2 rounded-lg bg-carbon-900 border border-white/10"><div class="text-slate-400">Länge</div><div class="text-white font-bold">${bp.length}</div></div>
+        <div class="p-2 rounded-lg bg-carbon-900 border border-white/10"><div class="text-slate-400">Lip-Höhe</div><div class="text-mint-400 font-bold">${bp.height}</div></div>
+        <div class="p-2 rounded-lg bg-carbon-900 border border-white/10"><div class="text-slate-400">Radius</div><div class="text-fox-400 font-bold">${bp.radius}</div></div>
+      `;
+      document.getElementById('bp-cutlist').innerHTML = bp.cutlist.map(c => `<li class="p-2 rounded-lg bg-carbon-900/80 border border-white/5">🪚 ${c}</li>`).join('');
+
+      const lipY = key === 'A' ? 145 : key === 'B' ? 105 : 65;
+      const endX = key === 'A' ? 420 : key === 'B' ? 490 : 550;
+      document.getElementById('wood-kicker-svg').innerHTML = `
+        <line x1="20" y1="240" x2="580" y2="240" stroke="#334155" stroke-width="2"/>
+        <path d="M 50,240 Q ${(50 + endX)/2},240 ${endX},${lipY} L ${endX},240 Z" fill="rgba(255,107,0,0.22)" stroke="#ff6b00" stroke-width="3"/>
+        <line x1="${endX}" y1="${lipY}" x2="${endX}" y2="240" stroke="#00f5b8" stroke-width="4"/>
+        <line x1="${(50 + endX)*0.65}" y1="${(240 + lipY)*0.65}" x2="${(50 + endX)*0.65}" y2="240" stroke="#00f5b8" stroke-width="3"/>
+        <line x1="${(50 + endX)*0.65}" y1="240" x2="${endX}" y2="${lipY}" stroke="#ff8533" stroke-width="2" stroke-dasharray="5,4"/>
+        <text x="55" y="262" fill="#94a3b8" font-family="JetBrains Mono" font-size="11">10x10cm KVH Rahmen | Länge: ${bp.length} | Lip: ${bp.height}</text>
+      `;
+    }
+
+    // =========================================================================
+    // 5. SUSPENSION, TIRE, GRAVITY, GEAR RATIO & BRAKING CALCULATORS
+    // =========================================================================
+    function calcSuspension() {
+      const weight = parseFloat(document.getElementById('susp-weight').value) || 82;
+      const mult = parseFloat(document.getElementById('susp-style').value) || 1.0;
+      const forkPsi = Math.round(weight * 1.08 * mult);
+      const shockPsi = Math.round(weight * 2.28 * mult);
+      const coilRate = Math.round((weight * 5.6 * mult) / 25) * 25;
+      const rebound = Math.max(2, Math.min(14, Math.round(13 - weight / 12)));
+
+      document.getElementById('out-fork-psi').textContent = `${forkPsi} PSI`;
+      document.getElementById('out-fork-rebound').textContent = `Rebound: ${rebound} Clicks (von zu)`;
+      document.getElementById('out-shock-psi').textContent = `${shockPsi} PSI`;
+      document.getElementById('out-shock-coil').textContent = `Coil: ${coilRate} lbs/in`;
+    }
+
+    function calcTireAndGravity() {
+      const weight = window.appState.riderWeight || 78;
+      const casingAdj = parseFloat(document.getElementById('tire-casing').value) || 0;
+      const r = parseFloat(document.getElementById('berm-radius').value) || 6;
+      const vKmh = parseFloat(document.getElementById('berm-speed').value) || 32;
+
+      const frontBar = Math.max(1.15, (1.18 + (weight - 60) * 0.014 + casingAdj)).toFixed(2);
+      const rearBar = Math.max(1.35, (1.38 + (weight - 60) * 0.016 + casingAdj)).toFixed(2);
+      document.getElementById('out-tire-front').textContent = `${frontBar} bar`;
+      document.getElementById('out-tire-front-psi').textContent = `${(frontBar * 14.504).toFixed(1)} PSI`;
+      document.getElementById('out-tire-rear').textContent = `${rearBar} bar`;
+      document.getElementById('out-tire-rear-psi').textContent = `${(rearBar * 14.504).toFixed(1)} PSI`;
+
+      // Centripetal + Gravity G-Load in Berm
+      const vMs = vKmh / 3.6;
+      const latG = (vMs * vMs) / (r * 9.81);
+      const totalG = Math.sqrt(1 + latG * latG);
+      document.getElementById('out-g-force').textContent = `${totalG.toFixed(2)} G`;
+      document.getElementById('out-eff-weight').textContent = `${Math.round(weight * totalG)} kg Last`;
+    }
+
+    function calcGearRatio() {
+      const front = parseFloat(document.getElementById('gear-front').value) || 32;
+      const rear = parseFloat(document.getElementById('gear-rear').value) || 10;
+      const circ = parseFloat(document.getElementById('gear-wheel').value) || 2.30;
+      const rpm = parseFloat(document.getElementById('gear-cadence').value) || 85;
+
+      const ratio = front / rear;
+      const rollout = ratio * circ;
+      const speedKmh = (rollout * rpm * 60) / 1000;
+
+      document.getElementById('out-gear-ratio').textContent = `${ratio.toFixed(2)} : 1`;
+      document.getElementById('out-gear-dev').textContent = `${rollout.toFixed(2)} m / Kurbel`;
+      document.getElementById('out-gear-speed').textContent = `${speedKmh.toFixed(1)} km/h`;
+
+      const tag = ratio >= 2.8 ? 'Bikepark / Highspeed' : ratio >= 1.4 ? 'Trail Allround' : 'Steiler Uphill-Gang';
+      document.getElementById('out-gear-type').textContent = tag;
+    }
+
+    function calcBraking() {
+      const speedKmh = parseFloat(document.getElementById('brake-speed').value) || 35;
+      const slopePct = parseFloat(document.getElementById('brake-slope').value) || 18;
+      const mu = parseFloat(document.getElementById('brake-surface').value) || 0.68;
+
+      const v = speedKmh / 3.6;
+      const slopeRad = Math.atan(slopePct / 100);
+      const slopeDeg = (slopeRad * 180) / Math.PI;
+      const decel = Math.max(1.2, 9.81 * (mu * Math.cos(slopeRad) - Math.sin(slopeRad)));
+      const brakeDist = (v * v) / (2 * decel);
+      const reactionDist = v * 0.6;
+
+      document.getElementById('out-brake-dist').textContent = `${brakeDist.toFixed(1)} m`;
+      document.getElementById('out-total-stop').textContent = `Inkl. Reaktion: ${(brakeDist + reactionDist).toFixed(1)}m`;
+      document.getElementById('out-slope-deg').textContent = `${slopeDeg.toFixed(1)}°`;
+
+      const warnEl = document.getElementById('out-brake-warn');
+      if (decel < 2.2) {
+        warnEl.textContent = '⚠️ Rutschgefahr! Bremsweg extrem lang';
+        warnEl.className = 'text-xs font-bold text-red-400 mt-1';
+      } else if (decel < 4.2) {
+        warnEl.textContent = '⚡ Früher Bremspunkt vor Anlieger nötig';
+        warnEl.className = 'text-xs font-bold text-fox-400 mt-1';
+      } else {
+        warnEl.textContent = '✓ Starker Grip — kontrolliertes Anbremsen';
+        warnEl.className = 'text-xs font-bold text-mint-400 mt-1';
+      }
+    }
+
+    // =========================================================================
+    // 6. 39 EUROPEAN BIKEPARKS & GATSCH-O-METER
+    // =========================================================================
+    const bikeparksData = [
+      { name: 'Saalbach Hinterglemm Leogang', country: 'AT', focus: 'Jump & DH World Cup', gatsch: 22, status: 'Hero Dirt' },
+      { name: 'Bikepark Schladming (Planai)', country: 'AT', focus: 'Steep DH & Flow', gatsch: 28, status: 'Hero Dirt' },
+      { name: 'Bikepark Serfaus-Fiss-Ladis', country: 'AT', focus: 'Family & Big Air', gatsch: 18, status: 'Hero Dirt' },
+      { name: 'Bike Republic Sölden', country: 'AT', focus: 'Shaped Flow & Enduro', gatsch: 24, status: 'Hero Dirt' },
+      { name: 'Bikepark Semmering (Zauberberg)', country: 'AT', focus: 'Freeride & Slopestyle', gatsch: 34, status: 'Trocken / Dusty' },
+      { name: 'Bikepark Wexl Trails', country: 'AT', focus: 'Flow & Jump Line', gatsch: 20, status: 'Hero Dirt' },
+      { name: 'Bikepark Innsbruck (Muttereralm)', country: 'AT', focus: 'Crankworx Dual & DH', gatsch: 30, status: 'Hero Dirt' },
+      { name: '3 Länder Enduro Trails Reschenpass', country: 'AT', focus: 'Natural Tech Enduro', gatsch: 42, status: 'Trocken / Dusty' },
+      { name: 'Bikepark Brandnertal', country: 'AT', focus: 'Tech & Dirt Jumps', gatsch: 55, status: 'Trocken / Dusty' },
+      { name: 'Bikepark Wagrain', country: 'AT', focus: 'Tables & Berms', gatsch: 25, status: 'Hero Dirt' },
+      { name: 'Bikepark Petzen (Thriller)', country: 'AT', focus: '11km Flow & EWS', gatsch: 38, status: 'Trocken / Dusty' },
+      { name: 'Bikepark Lienz (Hochstein)', country: 'AT', focus: 'Peter Sagan Flow', gatsch: 21, status: 'Hero Dirt' },
+      { name: 'Bikepark Winterberg', country: 'DE', focus: 'Slopestyle & Freeride', gatsch: 48, status: 'Trocken / Dusty' },
+      { name: 'MTB Zone Bikepark Geisskopf', country: 'DE', focus: 'Flow Country & DH', gatsch: 26, status: 'Hero Dirt' },
+      { name: 'Bikepark Willingen', country: 'DE', focus: 'Freeride & Enduro', gatsch: 68, status: 'Gatsch-Alarm' },
+      { name: 'Bikepark Todtnau', country: 'DE', focus: 'Classic Root DH', gatsch: 62, status: 'Trocken / Dusty' },
+      { name: 'Bikepark Lac Blanc', country: 'FR', focus: 'Granite Jumps & Flow', gatsch: 29, status: 'Hero Dirt' },
+      { name: 'Bikepark Oberammergau', country: 'DE', focus: 'Root & Jump Lines', gatsch: 71, status: 'Gatsch-Alarm' },
+      { name: 'Bikepark Samerberg', country: 'DE', focus: 'Flow & Skill Area', gatsch: 31, status: 'Trocken / Dusty' },
+      { name: 'Bikepark Hahnenklee', country: 'DE', focus: 'Harz Tech & Race', gatsch: 74, status: 'Gatsch-Alarm' },
+      { name: 'Bikepark Ochsenkopf', country: 'DE', focus: 'Rocky Downhill', gatsch: 45, status: 'Trocken / Dusty' },
+      { name: 'Paganella Bike (Molveno/Fai)', country: 'IT', focus: 'Dolomites Flow & Enduro', gatsch: 19, status: 'Hero Dirt' },
+      { name: 'Kronplatz Bike Park', country: 'IT', focus: 'High-Alpine Flow', gatsch: 22, status: 'Hero Dirt' },
+      { name: 'Finale Ligure', country: 'IT', focus: 'Mediterranean Enduro', gatsch: 12, status: 'Trocken / Dusty' },
+      { name: 'Mottolino Bikepark Livigno', country: 'IT', focus: 'Huge Air & Slopestyle', gatsch: 17, status: 'Hero Dirt' },
+      { name: 'Val di Sole Bike Land', country: 'IT', focus: 'Black Snake World Cup', gatsch: 33, status: 'Trocken / Dusty' },
+      { name: 'Pila Bikeland (Aosta)', country: 'IT', focus: 'Vertical Descent', gatsch: 27, status: 'Hero Dirt' },
+      { name: 'Bikepark Lenzerheide', country: 'CH', focus: 'Straightline & Flow', gatsch: 23, status: 'Hero Dirt' },
+      { name: 'Alpenbikepark Chur', country: 'CH', focus: 'Steep Loam & Jumps', gatsch: 36, status: 'Trocken / Dusty' },
+      { name: 'Bikepark Verbier', country: 'CH', focus: 'High Speed Berms', gatsch: 25, status: 'Hero Dirt' },
+      { name: 'Bikepark Laax (Flims)', country: 'CH', focus: 'Runca Trail & Never End', gatsch: 29, status: 'Hero Dirt' },
+      { name: 'Bikepark Morgins (Portes du Soleil)', country: 'CH', focus: 'Steep Tech & Roots', gatsch: 66, status: 'Gatsch-Alarm' },
+      { name: 'Chatel Bike Park', country: 'FR', focus: 'Mega Jumps & Vink Line', gatsch: 24, status: 'Hero Dirt' },
+      { name: 'Les Gets Bikepark', country: 'FR', focus: 'World Cup DH & Jump', gatsch: 28, status: 'Hero Dirt' },
+      { name: 'Morzine (Pleney)', country: 'FR', focus: 'Fast Berms & Dust', gatsch: 16, status: 'Trocken / Dusty' },
+      { name: 'Les Deux Alpes', country: 'FR', focus: 'Glacier to Valley 2400hm', gatsch: 14, status: 'Trocken / Dusty' },
+      { name: 'Bike Park Kranjska Gora', country: 'SI', focus: 'Technical Roots & Jumps', gatsch: 41, status: 'Trocken / Dusty' },
+      { name: 'Bike Park Pohorje (Maribor)', country: 'SI', focus: 'World Cup Track', gatsch: 35, status: 'Trocken / Dusty' },
+      { name: 'Bike Park Spicak', country: 'SI', focus: 'Böhmerwald Rock & Flow', gatsch: 52, status: 'Trocken / Dusty' }
+    ];
+
+    function renderBikeparks() {
+      const q = document.getElementById('park-search').value.toLowerCase();
+      const country = document.getElementById('park-country').value;
+      const gatsch = document.getElementById('park-gatsch').value;
+
+      const filtered = bikeparksData.filter(p => {
+        const matchQ = p.name.toLowerCase().includes(q) || p.focus.toLowerCase().includes(q);
+        const matchC = country === 'ALL' || p.country === country;
+        const matchG = gatsch === 'ALL' || p.status === gatsch;
+        return matchQ && matchC && matchG;
+      });
+
+      document.getElementById('bikeparks-grid').innerHTML = filtered.map(p => {
+        const isFav = window.appState.favoriteParks.includes(p.name);
+        const barColor = p.gatsch > 65 ? 'bg-amber-600' : p.gatsch > 32 ? 'bg-yellow-400' : 'bg-mint-500';
+        return `
+          <div class="glass-card p-4 rounded-xl flex flex-col justify-between gap-3">
+            <div>
+              <div class="flex items-start justify-between gap-2">
+                <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-carbon-800 text-mint-400">${p.country}</span>
+                <button onclick="toggleFavPark('${p.name.replace(/'/g, "\\'")}')" class="text-sm ${isFav ? 'text-fox-400' : 'text-slate-500 hover:text-white'}">
+                  ${isFav ? '★ Favorit' : '☆ Merken'}
+                </button>
+              </div>
+              <h4 class="font-bold text-sm text-white mt-2">${p.name}</h4>
+              <p class="text-xs text-slate-400 mt-0.5">${p.focus}</p>
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] font-mono mb-1">
+                <span class="text-slate-300">Gatsch-O-Meter: ${p.status}</span>
+                <span class="text-white">${p.gatsch}%</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-carbon-950 overflow-hidden">
+                <div class="h-full ${barColor}" style="width:${p.gatsch}%"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function toggleFavPark(name) {
+      const idx = window.appState.favoriteParks.indexOf(name);
+      if (idx >= 0) window.appState.favoriteParks.splice(idx, 1);
+      else window.appState.favoriteParks.push(name);
+      renderBikeparks();
+      await window.persistCloudUserData();
+    }
+
+    // =========================================================================
+    // 7. 100 MTB DATABASE & 3-CLICK BIKE ADVISOR
+    // =========================================================================
+    const brands = ['Santa Cruz', 'YT Industries', 'Canyon', 'Specialized', 'Propain', 'Transition', 'Commencal', 'Trek', 'Pivot', 'Forbidden'];
+    const models = [
+      { name: 'Megatower / Capra', cat: 'Enduro', travel: '170/170mm', wheel: '29', price: 4899 },
+      { name: 'V10 / Tues', cat: 'Downhill', travel: '203/200mm', wheel: 'Mullet', price: 5699 },
+      { name: 'Hightower / Spectral', cat: 'Trail', travel: '150/140mm', wheel: '29', price: 3499 },
+      { name: 'Nomad / Spindrift', cat: 'Freeride', travel: '180/180mm', wheel: 'Mullet', price: 4599 },
+      { name: 'Jackal / Dirt Love', cat: 'Dirt', travel: '100/0mm', wheel: '26', price: 1699 },
+      { name: 'Bronson / Clash', cat: 'Enduro', travel: '170/165mm', wheel: 'Mullet', price: 4699 },
+      { name: 'Demo / Sender', cat: 'Downhill', travel: '200/200mm', wheel: 'Mullet', price: 6299 },
+      { name: 'Stumpjumper / Hugene', cat: 'Trail', travel: '140/130mm', wheel: '29', price: 3299 },
+      { name: 'Patrol / Tyee', cat: 'Enduro', travel: '170/160mm', wheel: 'Mullet', price: 4399 },
+      { name: 'PBJ / Absolut', cat: 'Dirt', travel: '100/0mm', wheel: '26', price: 1499 }
+    ];
+
+    const bikes100 = [];
+    for (let i = 0; i < 100; i++) {
+      const b = brands[i % brands.length];
+      const m = models[Math.floor(i / 10)];
+      const tier = i % 3 === 0 ? 'Core' : i % 3 === 1 ? 'Pro' : 'Factory';
+      const price = m.price + (i % 3) * 850;
+      bikes100.push({
+        id: i + 1,
+        name: `${b} ${m.name.split(' / ')[i % 2]} ${tier}`,
+        cat: m.cat,
+        travel: m.travel,
+        wheel: m.wheel,
+        price,
+        headAngle: m.cat === 'Downhill' ? '63.0°' : m.cat === 'Enduro' ? '63.8°' : m.cat === 'Trail' ? '65.0°' : '69.0°'
+      });
+    }
+
+    function renderBikes() {
+      const q = document.getElementById('bike-search').value.toLowerCase();
+      const cat = document.getElementById('bike-cat-filter').value;
+      const list = bikes100.filter(b => (cat === 'ALL' || b.cat === cat) && b.name.toLowerCase().includes(q));
+      document.getElementById('bikes-grid').innerHTML = list.map(b => `
+        <div class="glass-card p-3.5 rounded-xl flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between text-[10px] font-mono text-mint-400">
+              <span>#${b.id} • ${b.cat}</span>
+              <span>${b.wheel}"</span>
+            </div>
+            <div class="font-bold text-xs text-white mt-1">${b.name}</div>
+          </div>
+          <div class="mt-2 pt-2 border-t border-white/5 flex justify-between text-[11px] font-mono text-slate-300">
+            <span>${b.travel} | ${b.headAngle}</span>
+            <span class="text-fox-400 font-bold">${b.price} €</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function runBikeAdvisor() {
+      const terrain = document.getElementById('adv-terrain').value;
+      const wheel = document.getElementById('adv-wheel').value;
+      const budget = parseInt(document.getElementById('adv-budget').value, 10);
+
+      let matches = bikes100.filter(b => b.cat === terrain && b.price <= budget);
+      if (matches.length < 3) matches = bikes100.filter(b => b.cat === terrain);
+      matches.sort((a, b) => (a.wheel === wheel ? -1 : 1));
+
+      document.getElementById('advisor-results').innerHTML = matches.slice(0, 3).map((b, idx) => `
+        <div class="p-3.5 rounded-xl bg-carbon-900 border ${idx === 0 ? 'border-mint-500' : 'border-white/10'}">
+          <div class="text-[10px] font-mono ${idx === 0 ? 'text-mint-400' : 'text-slate-400'}">${idx === 0 ? '🏆 TOP MATCH' : 'ALTERNATIVE'}</div>
+          <div class="font-bold text-sm text-white mt-0.5">${b.name}</div>
+          <div class="text-xs font-mono text-fox-400 mt-1">${b.travel} • ${b.wheel} • ${b.price} €</div>
+        </div>
+      `).join('');
+    }
+
+    // =========================================================================
+    // 8. USED-BIKE CHECKLIST
+    // =========================================================================
+    const checklistItems = [
+      'Steuerrohr & Tretlager auf Haarrisse / Dellen prüfen',
+      'Standrohre der Federgabel auf Kratzer & Buchsenspiel checken',
+      'Hinterbau-Lager seitlich auf Spiel testen',
+      'Laufräder auf Höhen- und Seitenschlag sowie Speichenspannung prüfen',
+      'Bremsscheibendicke (min. 1.5mm) & Druckpunkt testen',
+      'Kettenlängung mit Kettenlehre messen (< 0.75%)',
+      'Dropper-Post auf flüssiges Ausfahren & Spiel prüfen',
+      'Rahmennummer & Kaufbeleg abgleichen'
+    ];
+
+    function renderChecklist() {
+      const container = document.getElementById('used-bike-checklist');
+      container.innerHTML = checklistItems.map((item, idx) => {
+        const checked = !!window.appState.checklistDone[idx];
+        return `
+          <label class="flex items-center gap-2.5 p-2 rounded-xl bg-carbon-900/80 border border-white/5 cursor-pointer hover:border-mint-500/30">
+            <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleCheck(${idx})" class="w-4 h-4 accent-mint-500 rounded" />
+            <span class="${checked ? 'line-through text-slate-500' : 'text-slate-200'}">${item}</span>
+          </label>
+        `;
+      }).join('');
+      const count = Object.values(window.appState.checklistDone).filter(Boolean).length;
+      document.getElementById('checklist-progress').textContent = `${count} / ${checklistItems.length} geprüft`;
+    }
+
+    function toggleCheck(idx) {
+      window.appState.checklistDone[idx] = !window.appState.checklistDone[idx];
+      renderChecklist();
+    }
+
+    // =========================================================================
+    // 9. ARCADE MINI-GAMES (LANDING ANGLE Q/E & TRAIL-BUILDER TYCOON)
+    // =========================================================================
+    let arcadeState = {
+      x: 40,
+      y: 170,
+      vx: 3.1,
+      vy: 0,
+      bikeAngle: -20,
+      targetSlope: 32,
+      inAir: false,
+      flying: false,
+      score: 0
+    };
+
+    function resizeArcadeCanvas() {
+      const canvas = document.getElementById('angle-game-canvas');
+      if (!canvas) return;
+      canvas.width = canvas.clientWidth || 500;
+      canvas.height = canvas.clientHeight || 224;
+    }
+
+    function launchArcadeJump() {
+      resizeArcadeCanvas();
+      arcadeState.x = 30;
+      arcadeState.y = 180;
+      arcadeState.vx = 3.4;
+      arcadeState.vy = 0;
+      arcadeState.bikeAngle = -25;
+      arcadeState.targetSlope = 24 + Math.floor(Math.random() * 18);
+      arcadeState.inAir = false;
+      arcadeState.flying = true;
+    }
+
+    function tiltBike(delta) {
+      arcadeState.bikeAngle = Math.max(-65, Math.min(65, arcadeState.bikeAngle + delta));
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'q' || e.key === 'Q') tiltBike(-7);
+      if (e.key === 'e' || e.key === 'E') tiltBike(7);
+    });
+
+    function loopArcade() {
+      const canvas = document.getElementById('angle-game-canvas');
+      if (canvas && !document.getElementById('tab-arcade').classList.contains('hidden')) {
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const lipX = w * 0.28;
+        const lipY = h * 0.65;
+        const landX = w * 0.62;
+        const landY = h * 0.62;
+        const landEndX = w * 0.92;
+        const landEndY = landY + Math.tan((arcadeState.targetSlope * Math.PI) / 180) * (landEndX - landX);
+
+        // Draw Kicker
+        ctx.fillStyle = '#ff6b00';
+        ctx.beginPath();
+        ctx.moveTo(20, h - 20);
+        ctx.quadraticCurveTo(lipX * 0.6, h - 20, lipX, lipY);
+        ctx.lineTo(lipX, h - 20);
+        ctx.fill();
+
+        // Draw Landing
+        ctx.fillStyle = '#00f5b8';
+        ctx.beginPath();
+        ctx.moveTo(landX, h - 20);
+        ctx.lineTo(landX, landY);
+        ctx.lineTo(landEndX, Math.min(h - 20, landEndY));
+        ctx.lineTo(landEndX, h - 20);
+        ctx.fill();
+
+        if (arcadeState.flying) {
+          arcadeState.x += arcadeState.vx;
+          if (arcadeState.x < lipX) {
+            const p = (arcadeState.x - 20) / (lipX - 20);
+            arcadeState.y = (h - 20) - p * p * ((h - 20) - lipY);
+            arcadeState.bikeAngle = -28 * p;
+          } else {
+            if (!arcadeState.inAir) {
+              arcadeState.inAir = true;
+              arcadeState.vy = -4.6;
+            }
+            arcadeState.vy += 0.14;
+            arcadeState.y += arcadeState.vy;
+          }
+
+          // Check Touchdown on Landing
+          if (arcadeState.x >= landX && arcadeState.y >= landY + (arcadeState.x - landX) * Math.tan((arcadeState.targetSlope * Math.PI) / 180) * 0.65) {
+            arcadeState.flying = false;
+            const diff = Math.abs(arcadeState.bikeAngle - arcadeState.targetSlope);
+            if (diff <= 14) {
+              const pts = Math.max(50, 200 - Math.round(diff * 8));
+              arcadeState.score += pts;
+              document.getElementById('game-score').textContent = arcadeState.score;
+              showToast(`Stomped! Winkel-Differenz ${diff.toFixed(0)}° (+${pts} Punkte)`, 'success');
+            } else {
+              showToast(`Case / Nose-Dive! Dein Winkel: ${arcadeState.bikeAngle.toFixed(0)}° vs. Hang: ${arcadeState.targetSlope}°`, 'error');
+            }
+          }
+        }
+
+        // Draw Rider + Bike Icon
+        ctx.save();
+        ctx.translate(arcadeState.x, arcadeState.y - 10);
+        ctx.rotate((arcadeState.bikeAngle * Math.PI) / 180);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(-10, 4, 6, 0, Math.PI * 2);
+        ctx.arc(10, 4, 6, 0, Math.PI * 2);
+        ctx.moveTo(-10, 4);
+        ctx.lineTo(0, -4);
+        ctx.lineTo(10, 4);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '12px JetBrains Mono';
+        ctx.fillText(`Hang-Neigung: +${arcadeState.targetSlope}° | Bike-Winkel: ${arcadeState.bikeAngle.toFixed(0)}°`, 14, 22);
+      }
+      requestAnimationFrame(loopArcade);
+    }
+
+    // Trail-Builder Tycoon State & Fixed Purchase Buttons
+    let tycoon = {
+      cash: 150,
+      income: 5,
+      items: [
+        { id: 0, name: 'Anlieger-Kombi (Berm)', cost: 100, gain: 8, owned: 0 },
+        { id: 1, name: '10x10cm Wood Kicker Line', cost: 280, gain: 22, owned: 0 },
+        { id: 2, name: 'Pro Step-Up & Airbag', cost: 650, gain: 55, owned: 0 },
+        { id: 3, name: 'Sessellift & Bike-Wash', cost: 1500, gain: 140, owned: 0 }
+      ]
+    };
+
+    function digShovel() {
+      tycoon.cash += 10;
+      renderTycoon();
+    }
+
+    function buyTycoonUpgrade(id) {
+      const item = tycoon.items.find(i => i.id === id);
+      if (!item || tycoon.cash < item.cost) {
+        showToast('Nicht genug Budget! Erst mehr schaufeln oder Tickets sammeln.', 'error');
+        return;
+      }
+      tycoon.cash -= item.cost;
+      item.owned += 1;
+      tycoon.income += item.gain;
+      item.cost = Math.round(item.cost * 1.45);
+      renderTycoon();
+      showToast(`${item.name} gebaut! (+${item.gain} €/Sek)`, 'success');
+    }
+
+    function renderTycoon() {
+      document.getElementById('tycoon-cash').textContent = `${tycoon.cash} €`;
+      document.getElementById('tycoon-income').textContent = `${tycoon.income} € / Sek`;
+      document.getElementById('tycoon-upgrades').innerHTML = tycoon.items.map(item => {
+        const canBuy = tycoon.cash >= item.cost;
+        return `
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-carbon-900 border border-white/10">
+            <div>
+              <div class="text-xs font-bold text-white">${item.name} <span class="text-mint-400 font-mono">(x${item.owned})</span></div>
+              <div class="text-[11px] text-slate-400 font-mono">+${item.gain} €/Sek</div>
+            </div>
+            <button onclick="buyTycoonUpgrade(${item.id})" class="px-3 py-1.5 rounded-lg text-xs font-bold transition ${canBuy ? 'bg-mint-500 text-carbon-950 hover:bg-mint-400 cursor-pointer' : 'bg-carbon-800 text-slate-500 cursor-not-allowed'}">
+              Kaufen (${item.cost} €)
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    setInterval(() => {
+      tycoon.cash += tycoon.income;
+      const cashEl = document.getElementById('tycoon-cash');
+      if (cashEl) cashEl.textContent = `${tycoon.cash} €`;
+      renderTycoon();
+    }, 1000);
+
+    // =========================================================================
+    // INITIALIZE ALL MODULES ON LOAD
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      updateJumpShaper();
+      selectWoodBlueprint('A');
+      calcSuspension();
+      calcTireAndGravity();
+      calcGearRatio();
+      calcBraking();
+      renderBikeparks();
+      renderBikes();
+      runBikeAdvisor();
+      renderChecklist();
+      renderTycoon();
+      launchArcadeJump();
+      requestAnimationFrame(loopArcade);
+    });
+  </script>
+</body>
+</html>
